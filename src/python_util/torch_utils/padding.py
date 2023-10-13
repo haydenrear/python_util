@@ -1,9 +1,5 @@
 import torch
-from typing import Optional
 import logging
-
-from drools_py.configs.config_models import ConfigOption
-
 
 def pad_collapse_states(size_sequence_state: int, to_pad: torch.Tensor, aggregation):
     if len(to_pad.shape) == 3:
@@ -85,8 +81,7 @@ def pad_add_end_to_match(to_match_shape: list[int], to_pad):
         return to_pad
     padding = []
     for dim, size in enumerate(to_match_shape):
-        if isinstance(size, ConfigOption):
-            size = size.config_option
+        size = size.config_option
         next_padding = max(size - to_pad.shape[dim], 0)
         padding.append(next_padding)
         padding.append(0)
