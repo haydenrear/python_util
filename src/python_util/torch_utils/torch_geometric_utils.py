@@ -6,6 +6,19 @@ def get_sorted_by_key(tensor: dict[str, torch.Tensor]) -> list[torch.Tensor]:
     return [tensor[key] for key in sorted_keys]
 
 
+def convert_to_adjacencies(adjacency: torch.Tensor) -> dict[int, list[int]]:
+    clusters = {}
+    for i, row in enumerate(adjacency):
+        cluster_indices = torch.nonzero(row == 1.0)
+        for index in cluster_indices:
+            if int(index) in clusters:
+                clusters[int(index)].append(i)
+            else:
+                clusters[int(index)] = [i]
+
+    return clusters
+
+
 def top_k_adjacency_matrix(num_delegations: int, input_data):
     # Initialize adjacency matrix
     max_nodes_per_cluster = len(input_data) // num_delegations + 1
