@@ -8,7 +8,8 @@ from python_util.torch_utils.padding import pad_add_end_to_match
 
 
 def merge_masks_into_attn_mask(src_mask: torch.Tensor,
-                               tgt_mask: torch.Tensor, n_heads: int):
+                               tgt_mask: torch.Tensor,
+                               n_heads: int):
     # Assume you have source and target key padding masks with the same batch size
     # Extend the masks along the head dimension
     batch_size = src_mask.shape[0]
