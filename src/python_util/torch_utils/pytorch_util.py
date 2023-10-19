@@ -214,3 +214,10 @@ def get_sequence_size(state):
 
 def does_tensor_have_nan(in_tensor: torch.Tensor) -> bool:
     return numpy.isnan(in_tensor.detach().numpy()).any()
+
+
+def copy_tensor_to(copy_to: torch.Tensor, copy_from: torch.Tensor):
+    if copy_to.data.dtype != copy_from.data.dtype:
+        copy_to.to(dtype=copy_from.data.dtype)
+    copy_to.data = copy_from.data.clone().detach()
+    copy_to.requires_grad_(copy_from.requires_grad)

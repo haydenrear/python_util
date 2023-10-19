@@ -14,6 +14,12 @@ class LockStripingLocks:
 
 
 def synchronized_lock_striping(locks: LockStripingLocks, lock_arg_arg_name: str):
+    """
+    Creates/uses lock for each lock_arg_arg_name.
+    :param locks:
+    :param lock_arg_arg_name:
+    :return:
+    """
     def outside_wrapper(function):
 
         @functools.wraps(function)
