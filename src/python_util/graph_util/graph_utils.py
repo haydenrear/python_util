@@ -64,6 +64,31 @@ def get_node_cxns_in(graph: nx.DiGraph, node_match, node_only: bool = True):
     return [i[0] if node_only else i for i in graph.in_edges(node_match)]
 
 
+def get_node_cxns(graph: nx.DiGraph, node_match, node_only: bool = True,
+                  filter_duplicates: bool = False):
+
+    seen = set([])
+    for n in get_node_cxns_in(graph, node_match, node_only):
+        if (filter_duplicates and n not in seen) or not filter_duplicates:
+            seen.add(n)
+            yield n
+    for n in get_node_cxns_out(graph, node_match, node_only):
+        if (filter_duplicates and n not in seen) or not filter_duplicates:
+            seen.add(n)
+            yield n
+    for from_edge, to_edge in graph.edges(node_match):
+        if node_only:
+            n = from_edge if from_edge != node_match else to_edge
+            if (filter_duplicates and n not in seen) or not filter_duplicates:
+                seen.add(n)
+                yield n
+        else:
+            n = from_edge, to_edge
+            if (filter_duplicates and n not in seen) or not filter_duplicates:
+                seen.add(n)
+                yield n
+
+
 def get_sorted_by_key(tensor: dict[str, torch.Tensor]) -> list[torch.Tensor]:
     sorted_keys = sorted(tensor.keys())
     return [tensor[key] for key in sorted_keys]
