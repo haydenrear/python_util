@@ -81,7 +81,6 @@ def pad_add_end_to_match(to_match_shape: list[int], to_pad):
         return to_pad
     padding = []
     for dim, size in enumerate(to_match_shape):
-        size = size.config_option
         next_padding = max(size - to_pad.shape[dim], 0)
         padding.append(next_padding)
         padding.append(0)
