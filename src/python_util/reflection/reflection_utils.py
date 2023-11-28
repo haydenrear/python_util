@@ -60,8 +60,11 @@ def is_type_instance_of(type_to_compare_to: type, type_to_compare: type) -> bool
         does_origin_compare = type_to_compare.__origin__ is type_to_compare_to
         if does_origin_compare:
             return True
+    try:
+        is_instance = isinstance(type_to_compare_to, type_to_compare) or isinstance(type_to_compare, type_to_compare_to)
+    except:
+        is_instance = False
 
-    is_instance = isinstance(type_to_compare_to, type_to_compare) or isinstance(type_to_compare, type_to_compare_to)
     if is_instance:
         return is_instance
 
