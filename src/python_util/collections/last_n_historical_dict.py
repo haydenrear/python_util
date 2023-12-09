@@ -1,16 +1,18 @@
 from typing import TypeVar, Generic
 
 T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
 
 from collections import OrderedDict
 
 
-class LastNHistoricalDict(Generic[T]):
+class GenLastNHistoricalDict(Generic[K, V]):
     def __init__(self, max_size_keys: int, max_size_lst: int = -1):
         super().__init__()
         self.max_size_lst = max_size_lst
         self.max_size_keys = max_size_keys
-        self.dict: OrderedDict[int, list[T]] = OrderedDict()
+        self.dict: OrderedDict[K, list[T]] = OrderedDict()
         self.next_key = 0
         self.prev_key = 0
 
@@ -25,15 +27,15 @@ class LastNHistoricalDict(Generic[T]):
             return []
         return self.dict[self.prev_key]
 
-    def force_index_key(self, index: int):
+    def force_index_key(self, index: K):
         if index not in self.dict.keys():
             self.dict[index] = []
             self.prev_key = index
             self.next_key = index + 1
 
-    def insert(self, value):
+    def insert(self, key, value):
         if len(self.dict) == 0:
-            self.dict = {0: [value]}
+            self.dict = {key: [value]}
             self.prev_key = self.next_key
             self.next_key += 1
         else:
@@ -47,3 +49,7 @@ class LastNHistoricalDict(Generic[T]):
                 first = next(iter(self.dict.keys()))
                 del self.dict[first]
 
+
+class LastNHistoricalDict(GenLastNHistoricalDict[int, T], Generic[T]):
+    def __init__(self, max_size_keys: int, max_size_lst: int = -1):
+        super().__init__(max_size_keys, max_size_lst)
