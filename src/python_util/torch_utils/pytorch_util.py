@@ -22,7 +22,7 @@ def is_same_shape(t_1, t_2):
 
 
 def assert_same_shape(t_1, t_2):
-    assert is_same_shape(t_1, t_2)
+    assert is_same_shape(t_1, t_2), f"{t_1} not same as {t_2}."
 
 
 def get_torch_shape(t_1):

@@ -38,6 +38,10 @@ class LoggerFacade:
         print(f"Info: {output}")
         logging.info(output)
         LoggerFacade.debug(output)
+        with open('/Users/hayde/IdeaProjects/drools/feature-extractor/multi_modal/test_work/info.log',
+                  'a') as file:
+            file.write(output)
+            file.write('\n')
 
 
     @staticmethod
