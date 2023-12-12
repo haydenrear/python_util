@@ -1,7 +1,10 @@
+from random import random
+import random as rn
+from typing import Tuple
+
 import networkx as nx
 import numpy as np
 import torch
-import random as rn
 
 
 def create_random_edgelist(n_nodes: int, probability: float) -> list[list[int]]:
@@ -150,3 +153,35 @@ def create_edge_list_from_edges(edges, nodes=None):
                 edge_list.append([nodes.index(from_), nodes.index(to_)])
 
     return torch.tensor(edge_list).T
+
+
+def concatenate_graphs(graphs: list[torch.Tensor],
+                       edgelists: list[torch.Tensor],
+                       add_edge_probability: float = 0.0) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    :param graphs:
+    :param edgelists:
+    :param add_edge_probability:
+    :return:  Tuple where first element is graph and second element is edgelist.
+    """
+    concatenated_edgelist = torch.empty(0, 2)  # Empty tensor to store concatenated edgelist
+    # Concatenate edgelists while adjusting node indices
+    node_offset = 0
+    for edgelist in edgelists:
+        # Increment node indices of the current graph
+        edgelist_incremented = edgelist + node_offset
+
+        # Concatenate the adjusted edgelists along the rows
+        concatenated_edgelist = torch.cat((concatenated_edgelist, edgelist_incremented), dim=0)
+        if node_offset > 0 and add_edge_probability != 0.0:
+            for node1 in range(node_offset, edgelist_incremented.max().item() + 1):
+                for node2 in range(concatenated_edgelist.max().item() + 1 - node_offset):
+                    if rn.random() < add_edge_probability:
+                        new_edge = torch.tensor([[node1, node2 + node_offset]])
+                        concatenated_edgelist = torch.cat((concatenated_edgelist, new_edge), dim=0)
+
+
+    # Update node offset for the next graph
+        node_offset += edgelist.max().item() + 1
+
+    return torch.concat(graphs), concatenated_edgelist
