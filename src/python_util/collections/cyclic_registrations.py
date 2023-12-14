@@ -129,7 +129,7 @@ class CyclicRegistrations(Generic[C, T]):
         async with self.condition:
             self.see_current_lock.acquire()
             value_not_in_current = value not in self.current
-            if value_not_in_current:
+            if value_not_in_current and value in self.starting_values:
                 self.current.add(value)
                 self.condition.notify_all()
                 # if there's nobody waiting, then clear and perform action if can clear.
