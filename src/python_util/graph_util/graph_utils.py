@@ -1,3 +1,4 @@
+import math
 from random import random
 import random as rn
 from typing import Tuple
@@ -5,6 +6,8 @@ from typing import Tuple
 import networkx as nx
 import numpy as np
 import torch
+
+from python_util.torch_utils.padding import pad_add_end_to_match
 
 
 def create_random_edgelist(n_nodes: int, probability: float) -> list[list[int]]:
@@ -69,7 +72,6 @@ def get_node_cxns_in(graph: nx.DiGraph, node_match, node_only: bool = True):
 
 def get_node_cxns(graph: nx.DiGraph, node_match, node_only: bool = True,
                   filter_duplicates: bool = False):
-
     seen = set([])
     for n in get_node_cxns_in(graph, node_match, node_only):
         if (filter_duplicates and n not in seen) or not filter_duplicates:
@@ -155,6 +157,59 @@ def create_edge_list_from_edges(edges, nodes=None):
     return torch.tensor(edge_list).T
 
 
+def current_edges(edgelist, node):
+    edgelist = edgelist.T
+    first_value = edgelist[0] != node
+    second_value = edgelist[1] == node
+    edgelist_node = first_value & second_value
+    first_edgelist: torch.Tensor = edgelist[0, edgelist_node]
+    first_value = edgelist[1] != node
+    second_value = edgelist[0] == node
+    edgelist_node = first_value & second_value
+    second_edgelist: torch.Tensor = edgelist[1, edgelist_node]
+    return torch.cat((first_edgelist, second_edgelist))
+
+
+def add_connections(edgelist, min_edges):
+    """
+    Adds connections to a PyTorch edgelist until each node has at least min_edges edges.
+
+    Args:
+      edgelist: (torch.LongTensor) Edge list with shape [num_edges, 2] where each row is [source, target].
+      min_edges: (int) Minimum number of edges per node.
+      device: (torch.device) Device where the tensors are stored (e.g., cpu, cuda).
+
+    Returns:
+      new_edgelist: (torch.LongTensor) The updated edgelist with added connections.
+    """
+    to_count = edgelist[:, 0]
+    to_count_two = edgelist[:, 1]
+    degrees = torch.bincount(to_count)  # Count in-degree for each node
+    degrees_two = torch.bincount(to_count_two)  # Count in-degree for each node
+    degrees_two = pad_add_end_to_match([i for i in degrees.shape], degrees_two)
+    degrees = pad_add_end_to_match([i for i in degrees_two.shape], degrees)
+    degrees_total = degrees + degrees_two
+    nodes_to_add_edges = torch.where(degrees_total < min_edges)[0]  # Find nodes with less than min_edges
+    num_edges_to_add = min_edges - degrees_total[nodes_to_add_edges]  # Number of edges to add for each node
+    biggest_value = max(int(torch.max(edgelist[:, 0])), int(torch.max(edgelist[:, 1])))
+    to_add_edges = []
+
+    for i, n in enumerate(nodes_to_add_edges):
+        edges_to_add = []
+        curr = current_edges(edgelist, n).numpy().tolist()
+        added = 0
+        while added < num_edges_to_add[i] and added < biggest_value - 3:
+            import random
+            next_biggest = random.randint(0, biggest_value)
+            if next_biggest not in edges_to_add and next_biggest != int(n) and next_biggest not in curr:
+                to_add_edges.append([int(n), next_biggest])
+                to_add_edges.append([next_biggest, int(n)])
+                added += 1
+
+    edgelist = torch.cat((edgelist, torch.tensor(to_add_edges)))
+    return edgelist
+
+
 def concatenate_graphs(graphs: list[torch.Tensor],
                        edgelists: list[torch.Tensor],
                        add_edge_probability: float = 0.0) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -180,8 +235,7 @@ def concatenate_graphs(graphs: list[torch.Tensor],
                         new_edge = torch.tensor([[node1, node2 + node_offset]])
                         concatenated_edgelist = torch.cat((concatenated_edgelist, new_edge), dim=0)
 
-
-    # Update node offset for the next graph
+        # Update node offset for the next graph
         node_offset += edgelist.max().item() + 1
 
     return torch.concat(graphs), concatenated_edgelist
