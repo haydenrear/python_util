@@ -4,6 +4,7 @@ from typing import Optional
 import torch.nn
 import numpy
 
+from python_util.logger.log_level import LogLevel
 from python_util.logger.logger import LoggerFacade
 
 
@@ -221,3 +222,11 @@ def copy_tensor_to(copy_to: torch.Tensor, copy_from: torch.Tensor):
         copy_to.to(dtype=copy_from.data.dtype)
     copy_to.data = copy_from.data.clone().detach()
     copy_to.requires_grad_(copy_from.requires_grad)
+
+
+def do_nan(in_tensor: torch.Tensor, value: float = 0.0) -> torch.Tensor:
+    if LogLevel.is_debug_enabled():
+        assert not does_tensor_have_nan(in_tensor)
+    else:
+        in_tensor = torch.nan_to_num(in_tensor, value)
+    return in_tensor
