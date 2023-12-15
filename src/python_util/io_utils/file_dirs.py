@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import uuid
 
 from python_util.logger.logger import LoggerFacade
 
@@ -107,3 +108,11 @@ def delete_files_and_dirs_recursively(file_or_dir: str):
             LoggerFacade.warn(f"Failed to delete {file_or_dir} with error: {e}")
     elif os.path.isfile(file_or_dir):
         try_remove(file_or_dir)
+
+
+def create_random_file_name(suffix: str):
+    out = (str(uuid.uuid4()).replace(":", "")
+           .replace("*", "")
+           .replace("?", "")
+           .replace("/", ""))
+    return f'{out[:min(8, len(out))]}.{suffix}'
