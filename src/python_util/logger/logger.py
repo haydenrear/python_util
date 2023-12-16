@@ -46,6 +46,9 @@ class LoggerFacade:
 
     @staticmethod
     def error(output):
+        with open('/Users/hayde/IdeaProjects/drools/feature-extractor/multi_modal/test_work/error.log','a') as file:
+            file.write(output)
+            file.write('\n')
         print(f"Error: {output}")
         logging.error(output)
         LoggerFacade.debug(output)

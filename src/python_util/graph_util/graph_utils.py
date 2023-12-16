@@ -54,11 +54,13 @@ def extract_edgelist_subgraph(starting_edgelist: torch.Tensor, nodes: set[int]):
     return out_edges
 
 
-def transform_to_adjacency_matrix(edgelist: torch.Tensor, starting: torch.Tensor) -> torch.Tensor:
+def transform_to_adjacency_matrix(edgelist: torch.Tensor, starting: torch.Tensor = None) -> torch.Tensor:
+    max_value = int(torch.max(edgelist[:, 0]))
+    if starting is None:
+        starting = torch.zeros([max_value + 1, max_value + 1])
     for i in range(edgelist.shape[0]):
-        for j in range(edgelist.shape[1]):
-            starting[edgelist[i], edgelist[j]] = 1
-            starting[edgelist[j], edgelist[i]] = 1
+        if i < edgelist.shape[0]:
+            starting[int(edgelist[i][0]), int(edgelist[i][1])] = 1
     return starting
 
 
@@ -239,3 +241,26 @@ def concatenate_graphs(graphs: list[torch.Tensor],
         node_offset += edgelist.max().item() + 1
 
     return torch.concat(graphs), concatenated_edgelist
+
+
+def concatenate_edgelists(edgelists: list[torch.Tensor]) -> torch.Tensor:
+    """
+    :param graphs:
+    :param edgelists:
+    :param add_edge_probability:
+    :return:  Tuple where first element is graph and second element is edgelist.
+    """
+    concatenated_edgelist = torch.empty(0, 2)  # Empty tensor to store concatenated edgelist
+    # Concatenate edgelists while adjusting node indices
+    node_offset = 0
+    for edgelist in edgelists:
+        # Increment node indices of the current graph
+        edgelist_incremented = edgelist + node_offset
+
+        # Concatenate the adjusted edgelists along the rows
+        concatenated_edgelist = torch.cat((concatenated_edgelist, edgelist_incremented), dim=0)
+
+        # Update node offset for the next graph
+        node_offset += edgelist.max().item() + 1
+
+    return concatenated_edgelist
