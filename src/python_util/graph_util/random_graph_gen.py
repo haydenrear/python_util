@@ -1,6 +1,7 @@
 import random as rn
 
 import networkx as nx
+import torch
 
 from python_util.graph_util.graph_utils import create_random_edgelist
 
@@ -31,4 +32,15 @@ class RandomGraphGenerator:
             graphs.append(RandomGraph([i for i in range(num_nodes)], num_nodes, graph))
 
         return graphs
+
+    @staticmethod
+    def generate_random_edgelist(max_size: int, min_size: int, num_gen: int) -> list[list[list[int]]]:
+        random = rn.Random()
+        edgelists = []
+        for _ in range(num_gen):
+            num_nodes = random.randint(min_size, max_size)
+            proba_cxn = random.random()
+            edgelists.append(create_random_edgelist(num_nodes, proba_cxn))
+
+        return edgelists
 

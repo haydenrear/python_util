@@ -202,7 +202,7 @@ def create_look_ahead_mask(size):
 
 
 def create_target_mask(tgt):
-    tgt_len = tgt.size(1)
+    tgt_len = tgt.num_kernels(1)
     tgt_pad_mask = create_padding_mask(tgt)
     tgt_look_ahead_mask = create_look_ahead_mask(tgt_len)
     tgt_mask = torch.maximum(tgt_pad_mask, tgt_look_ahead_mask)
