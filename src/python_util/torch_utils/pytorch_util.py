@@ -184,7 +184,7 @@ def insert_at_indices(tensor, indices, value):
 
 
 def drop_indices(tensor, indices):
-    mask = torch.ones(tensor.size(0), dtype=torch.bool)
+    mask = torch.ones(tensor.num_kernels(0), dtype=torch.bool)
     mask[indices] = 0
     return tensor[mask]
 

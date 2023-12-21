@@ -1,7 +1,7 @@
 import math
 from random import random
 import random as rn
-from typing import Tuple
+from typing import Tuple, Optional
 
 import networkx as nx
 import numpy as np
@@ -54,13 +54,19 @@ def extract_edgelist_subgraph(starting_edgelist: torch.Tensor, nodes: set[int]):
     return out_edges
 
 
-def transform_to_adjacency_matrix(edgelist: torch.Tensor, starting: torch.Tensor = None) -> torch.Tensor:
-    max_value = int(torch.max(edgelist[:, 0]))
+def transform_to_adjacency_matrix(edge_list: torch.Tensor, starting: torch.Tensor = None) -> torch.Tensor:
+    # Extract edges from the edge list
+    src_nodes, dest_nodes = edge_list[:, 0], edge_list[:, 1]
+    num_nodes = max(int(torch.max(src_nodes)) + 1, int(torch.max(dest_nodes)) + 1)
+
+    # Create an empty adjacency matrix
     if starting is None:
-        starting = torch.zeros([max_value + 1, max_value + 1])
-    for i in range(edgelist.shape[0]):
-        if i < edgelist.shape[0]:
-            starting[int(edgelist[i][0]), int(edgelist[i][1])] = 1
+        starting = torch.zeros(num_nodes, num_nodes, dtype=torch.int)
+
+    # Map edges to positions in the adjacency matrix and set corresponding values to 1
+    starting[src_nodes, dest_nodes] = 1
+    starting[dest_nodes, src_nodes] = 1  # For undirected graphs (remove for directed)
+
     return starting
 
 
@@ -172,7 +178,8 @@ def current_edges(edgelist, node):
     return torch.cat((first_edgelist, second_edgelist))
 
 
-def add_connections(edgelist, min_edges):
+def add_connections(edgelist, min_edges,
+                    starting_adj_proba: Optional[torch.Tensor] = None):
     """
     Adds connections to a PyTorch edgelist until each node has at least min_edges edges.
 
@@ -182,7 +189,78 @@ def add_connections(edgelist, min_edges):
       device: (torch.device) Device where the tensors are stored (e.g., cpu, cuda).
 
     Returns:
-      new_edgelist: (torch.LongTensor) The updated edgelist with added connections.
+      :param min_edges:
+      :param edgelist: (torch.LongTensor) The updated edgelist with added connections.
+      :param starting_adj_proba: If provided, this is an adjacency matrix with each item representing the likelihood
+      of adding an edge there if there aren't enough to meet the min_edges requirement.
+    """
+    adjacency_matrix = transform_to_adjacency_matrix(edgelist)
+    to_add_adj = add_edges_vectorized_unique(adjacency_matrix, min_edges, starting_adj_proba)
+    to_add_edges = transform_from_adjacency_matrix(to_add_adj)
+    edgelist = torch.cat((edgelist, torch.tensor(to_add_edges).T))
+    return edgelist
+
+
+def convert_from_networkx_edgelist(network_k: nx.Graph):
+    edge_list = nx.to_edgelist(network_k)
+    edges = []
+    for from_edge, to_edge, other in edge_list:
+        edges.append([from_edge, to_edge])
+    return torch.tensor(edges)
+
+
+def add_edges_vectorized_unique(adj_matrix, n, make_symmetric: bool = False,
+                                starting_edges: Optional[torch.Tensor] = None):
+    num_nodes = adj_matrix.size(0)
+
+    # Calculate the current number of edges for each node (excluding self-loops)
+    current_edges = torch.sum(adj_matrix, dim=1) - adj_matrix.diag()
+
+    # Calculate the edges to add for each node to meet the minimum requirement 'n'
+    edges_to_add = torch.maximum(torch.zeros(num_nodes, dtype=torch.int), n - current_edges)
+
+    # Mask nodes that already have enough edges from being selected
+    mask = edges_to_add > 0
+    mask = mask.expand([num_nodes, num_nodes])
+    masked_diag = ~torch.eye(num_nodes, dtype=torch.bool, device=adj_matrix.device)
+    valid_mask = mask & masked_diag
+    valid_mask = valid_mask.to(dtype=torch.int)
+
+    # Sample unique indices for each node without self-loops
+    random_indices = torch.rand(num_nodes, num_nodes, device=adj_matrix.device)
+    random_indices *= valid_mask
+
+    if starting_edges is not None:
+        starting_edges *= valid_mask
+        random_indices += starting_edges
+
+    v, indices = torch.topk(random_indices, k=edges_to_add.max(), dim=1)
+
+    v[v == 0] = 1
+    indices = indices[:, :edges_to_add.max()]
+
+    # Create masks to update adjacency matrix with additional edges
+    unsqueeze = edges_to_add.unsqueeze(1).expand(-1, edges_to_add.max())
+    edges_to_add_mask = unsqueeze != 0
+
+    # Update adjacency matrix with new edges
+    v_ = v.masked_fill(~edges_to_add_mask, 0.0)
+    next_scattered = torch.scatter(adj_matrix.to(dtype=torch.float), 1, indices, v_)
+    next_scattered += adj_matrix.to(dtype=torch.float)
+    next_scattered[next_scattered > 0] = 1
+    adj_matrix = next_scattered.to(dtype=torch.int)
+
+    # Ensure symmetry in the adjacency matrix
+    if make_symmetric:
+        adj_matrix = torch.maximum(adj_matrix, adj_matrix.t())
+
+    return adj_matrix
+
+
+def count_num_edges(edgelist: torch.Tensor) -> torch.Tensor:
+    """
+    :param edgelist: An edgelist
+    :return:
     """
     to_count = edgelist[:, 0]
     to_count_two = edgelist[:, 1]
@@ -191,25 +269,7 @@ def add_connections(edgelist, min_edges):
     degrees_two = pad_add_end_to_match([i for i in degrees.shape], degrees_two)
     degrees = pad_add_end_to_match([i for i in degrees_two.shape], degrees)
     degrees_total = degrees + degrees_two
-    nodes_to_add_edges = torch.where(degrees_total < min_edges)[0]  # Find nodes with less than min_edges
-    num_edges_to_add = min_edges - degrees_total[nodes_to_add_edges]  # Number of edges to add for each node
-    biggest_value = max(int(torch.max(edgelist[:, 0])), int(torch.max(edgelist[:, 1])))
-    to_add_edges = []
-
-    for i, n in enumerate(nodes_to_add_edges):
-        edges_to_add = []
-        curr = current_edges(edgelist, n).numpy().tolist()
-        added = 0
-        while added < num_edges_to_add[i] and added < biggest_value - 3:
-            import random
-            next_biggest = random.randint(0, biggest_value)
-            if next_biggest not in edges_to_add and next_biggest != int(n) and next_biggest not in curr:
-                to_add_edges.append([int(n), next_biggest])
-                to_add_edges.append([next_biggest, int(n)])
-                added += 1
-
-    edgelist = torch.cat((edgelist, torch.tensor(to_add_edges)))
-    return edgelist
+    return degrees_total
 
 
 def concatenate_graphs(graphs: list[torch.Tensor],
