@@ -40,8 +40,11 @@ class LoggerFacade:
         LoggerFacade.debug(output)
         with open('/Users/hayde/IdeaProjects/drools/feature-extractor/multi_modal/test_work/info.log',
                   'a') as file:
-            file.write(output)
-            file.write('\n')
+            try:
+                file.write(output)
+                file.write('\n')
+            except Exception as e:
+                print(f"Could not write in log: {e}")
 
 
     @staticmethod
