@@ -19,12 +19,18 @@ class TestPatternFinder(unittest.TestCase):
         assert is_repetition([1, 2, 3], [1, 2, 3, 1, 2, 3, 1, 2, 3, 1])
         assert not is_repetition([2, 3, 4], [2, 3, 4, 1, 2, 3])
         assert is_repetition([1, 2, 3], [3, 1, 2, 3, 1, 2, 3])
-        assert is_repetition([1,2], [2,1,2,1,2,1,2,1])
-        assert is_repetition([3,4,1,2], [4,1,2,3,4,1])
+        assert is_repetition([1, 2], [2, 1, 2, 1, 2, 1, 2, 1])
+        assert is_repetition([3, 4, 1, 2], [4, 1, 2, 3, 4, 1])
 
     def test_no_repetition(self):
         finder = PatternKeepingList(10)
         for element in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+            finder.add(element)
+        self.assertEqual(finder.get_pattern(), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        for element in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+            finder.add(element)
+        self.assertEqual(finder.get_pattern(), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        for element in [1, 2, 3, 4]:
             finder.add(element)
         self.assertEqual(finder.get_pattern(), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
@@ -33,10 +39,17 @@ class TestPatternFinder(unittest.TestCase):
         for element in [1, 2, 3, 1, 2, 3, 1, 2, 3, 1]:
             finder.add(element)
         patt = finder.get_pattern()
-        assert all([i in patt for i in [1,2,3]])
+        assert all([i in patt for i in [1, 2, 3]])
+        for element in [1, 2, 3, 1, 2, 3, 1, 2, 3, 1]:
+            finder.add(element)
+        patt = finder.get_pattern()
+        assert all([i in patt for i in [1, 2, 3]])
 
     def test_partial_repetition(self):
         finder = PatternKeepingList(10)
+        for element in [1, 2, 3, 4, 5, 1, 2, 3, 4, 5]:
+            finder.add(element)
+        self.assertEqual(finder.get_pattern(), [1, 2, 3, 4, 5])
         for element in [1, 2, 3, 4, 5, 1, 2, 3, 4, 5]:
             finder.add(element)
         self.assertEqual(finder.get_pattern(), [1, 2, 3, 4, 5])
@@ -46,18 +59,33 @@ class TestPatternFinder(unittest.TestCase):
         for element in [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]:
             finder.add(element)
         self.assertEqual(finder.get_pattern(), [1])
+        for element in [1, 1, 1, 1, 1, 1, 1]:
+            finder.add(element)
+        self.assertEqual(finder.get_pattern(), [1])
 
     def test_double_element_repetition(self):
         finder = PatternKeepingList(10)
-        for element in [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]:
+        for element in [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]:
             finder.add(element)
         self.assertEqual(finder.get_pattern(), [1, 2])
+        finder = PatternKeepingList(10)
+        for element in [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]:
+            finder.add(element)
+        self.assertEqual(finder.get_pattern(), [2, 1])
+        self.assertEqual(finder.get_pattern(), [2, 1])
+        for element in [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]:
+            finder.add(element)
+        self.assertEqual(finder.get_pattern(), [2, 1])
 
     def test_late_repetition(self):
         finder = PatternKeepingList(10)
-        for element in [3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1]:
+        for element in [3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2]:
             finder.add(element)
         patt = finder.get_pattern()
+        self.assertTrue(len(patt) == 4)
+        self.assertTrue(all(i in patt for i in [1, 2, 3, 4]))
+        for element in [3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2]:
+            finder.add(element)
         self.assertTrue(len(patt) == 4)
         self.assertTrue(all(i in patt for i in [1, 2, 3, 4]))
 

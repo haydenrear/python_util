@@ -1,4 +1,8 @@
-from typing import TypeVar, Generic
+import copy
+import threading
+from typing import TypeVar, Generic, Optional
+
+from pygtrie import Trie
 
 from python_util.logger.logger import LoggerFacade
 
@@ -80,137 +84,81 @@ def is_repetition(sub_pattern: list[int], pattern: list[int]):
 
 class PatternKeepingList(Generic[T]):
     # TODO:
-    def __init__(self, max_length, do_combinatorial_patterns: bool = False):
-        self.do_combinatorial_patterns = do_combinatorial_patterns
+    def __init__(self, max_length):
         self.max_length = max_length
         self.data = []
         self.pattern = None
-        self.restart_idx = -1
-        self.potential_patterns = {}
-
-    def add_str(self, element):
-        if self.restart_idx == -1:
-            self.add(int(element))
+        self.did_calculate = threading.Event()
+        self.did_calculate.clear()
+        self.pattern_done = threading.Event()
 
     def add(self, element):
-        if (self.pattern is not None and self.do_combinatorial_patterns) or self.restart_idx != -1:
-            return  # Pattern has been found, no more additions
-
-        if self.max_length >= len(self.data):
+        if self.pattern is not None:
+            if self.pattern_done.is_set():
+                return
             self.data.append(element)
-
-        # Initialize potential patterns when enough data is accumulated
-        if self.do_combinatorial_patterns:
-            self.potential_patterns[len(self.data)] = [i for i in range(len(self.data))]
-
-        # Update potential patterns
-        if 2 < len(self.data) <= self.max_length and self.do_combinatorial_patterns:
-            self.update_potential_patterns()
-
-        # Determine pattern when maximum length is reached
-        if self.max_length == len(self.data):
-            self.find_pattern()
-
-    def update_potential_patterns(self):
-        new_potential_patterns = {}
-        for pattern_length, start_indices in self.potential_patterns.items():
-            for start_index in start_indices:
-                length_ = self.data[start_index: start_index + pattern_length]
-                pattern_length_ = self.data[
-                                  start_index + pattern_length:min(start_index + pattern_length + pattern_length,
-                                                                   len(self.data))]
-                if length_ == pattern_length_:
-                    if pattern_length + 1 not in new_potential_patterns:
-                        new_potential_patterns[pattern_length + 1] = []
-                    new_potential_patterns[pattern_length + 1].append(start_index)
-        for key, pattern in new_potential_patterns.items():
-            self.potential_patterns[key] = pattern
+            if self.data[0:len(self.pattern)] != self.pattern:
+                self.pattern = None
+                self.did_calculate.clear()
+            elif len(self.data) > len(self.pattern):
+                for i in range(len(self.pattern), len(self.data), len(self.pattern)):
+                    next_data = self.data[i:min(i + len(self.pattern), len(self.data))]
+                    if not all([next_data[i] == self.pattern[i] for i in range(len(next_data))]):
+                        LoggerFacade.debug(f"Pattern reset: {next_data} and {self.pattern}")
+                        self.pattern = None
+                        self.did_calculate.clear()
+                        return
+            elif len(self.data) == self.max_length:
+                self.data.clear()
+                self.pattern_done.set()
+        else:
+            self.data.append(element)
 
     def detect_pattern_of_len(self, patt):
         return len([i for i in range(len(self.data)) if self.data[i: i + len(patt)] == patt])
 
-
-    def find_repeating_sequences(self, sequence_in, n_sequences_check: int):
-        """Finds all repeating sequences within a sequence.
-
-        Args:
-          sequence: The sequence to search.
-
-        Returns:
-          A list of all repeating sequences.
-          :param n_sequences_check:
-        """
-        sequences = []
-        count = 0
-        sequence = sequence_in
-        while len(sequence) > 1 and count < n_sequences_check:
-            left, right = sequence[:len(sequence) // 2], sequence[len(sequence) // 2:]
-            if left == right:
-                sequences.append(left)
-            sequence = left if len(left) < len(right) else right
-            count += 1
-        return sequences if len(sequence) == 0 and len(sequence[0]) != 1 else [sequence_in]
-
     def find_pattern(self):
-        if len(self.data) != 1 and self.data[-1:][0] == self.data[0]:
-            s = self.find_repeating_sequences(self.data[:-1], 10)
-            self.pattern = s[0]
-            self.restart_idx = len(self.data)
-        elif self.restart_idx != -1:
-            return self.pattern
-        elif self.do_combinatorial_patterns:
-            self.find_combinatorial_pattern()
-        else:
-            self.pattern = self.data
-
-
-    def find_combinatorial_pattern(self):
-        sorted_patterns = sorted(self.potential_patterns.items(), key=lambda item: item[0])
-
-        for pattern_length, start_indices in sorted_patterns:
-            for start_index in start_indices:
-                potential_pattern = self.data[start_index: start_index + pattern_length]
-                if self.detect_pattern_of_len(potential_pattern) > 1:
-                    if not self.pattern or len(potential_pattern) > len(self.pattern):
-                        self.pattern = potential_pattern
-
-        if not self.pattern:
-            return
-
-        patterns = [self.pattern] if self.pattern else None
-
-        for length, pattern_start in self.potential_patterns.items():
-            for start_index in pattern_start:
-                pattern_to_check = self.data[start_index: start_index + length]
-                for i, pattern in enumerate(patterns):
-                    if pattern_to_check not in patterns and is_repetition(pattern_to_check, pattern):
-                        patterns.append(pattern_to_check)
-
-        sorted_val = sorted(patterns, key=lambda x: len(x))
-        biggest = len(sorted_val) - 1
-        for i, pattern in enumerate(sorted_val):
-            while True:
-                biggest_ = sorted_val[biggest]
-                if is_repetition(pattern, biggest_):
-                    if len(biggest_) == len(pattern):
-                        self.pattern = pattern
-                        return
-                    biggest = biggest - 1
-                else:
-                    break
-                if biggest == i:
-                    self.pattern = pattern
-                    return
+        self.pattern = self.break_pattern(self.data)
 
     def get_pattern_str(self):
         self.find_pattern()
         return [str(i) for i in self.get_pattern()]
 
+    def break_pattern(self, to_break_pattern):
+        length = len(to_break_pattern)
+        result: Optional[list] = None
+        value = to_break_pattern
+        for pattern_length in range(1, length // 2 + 1):
+            # Construct the pattern from the start of the string
+            pattern = value[:pattern_length]
+            found_pattern = True
+
+            # Check if the pattern repeats throughout the string
+            for i in range(pattern_length, length, pattern_length):
+                if value[i:i + pattern_length] != pattern:
+                    found_pattern = False
+                    break
+
+            # If the pattern repeats, update the result and break the loop
+            if found_pattern:
+                if not result or len(pattern) < len(result):
+                    result = pattern
+                break
+
+        return result if result is not None else copy.copy(to_break_pattern)
+
     def get_pattern(self):
-        if self.pattern and len(self.pattern) != 0 and all(
-                pattern_item == self.pattern[0] for pattern_item in self.pattern):
-            return [self.pattern[0]]
-        elif not self.pattern:
-            return self.data
-        else:
+        if self.pattern_done.is_set():
             return self.pattern
+        if not self.pattern:
+            self.pattern = self.break_pattern(self.data)
+            self.did_calculate.clear()
+            return self.pattern
+        else:
+            if self.did_calculate.is_set():
+                self.pattern = self.break_pattern(self.data)
+                self.did_calculate.clear()
+                return self.pattern
+            else:
+                return self.pattern
+
