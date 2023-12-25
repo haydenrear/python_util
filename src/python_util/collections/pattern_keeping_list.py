@@ -93,6 +93,11 @@ class PatternKeepingList(Generic[T]):
         self.pattern_done = threading.Event()
 
     def add(self, element):
+        """
+        # TODO: when adding next element, keep the expected next element, and if it matches the skip validations.
+        :param element:
+        :return:
+        """
         if self.pattern is not None:
             if self.pattern_done.is_set():
                 return
