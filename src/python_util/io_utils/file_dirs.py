@@ -85,7 +85,12 @@ def get_work_dir(file):
 
 
 def get_resources_dir(file):
-    return os.path.join(get_base_path_of_current_file(file), 'resources')
+    """
+    Recursively gets the directory of the file and checks to see if resources exists until reaches the base directory.
+    :param file:
+    :return:
+    """
+    return get_dir(file, 'resources')
 
 
 def try_remove(file):

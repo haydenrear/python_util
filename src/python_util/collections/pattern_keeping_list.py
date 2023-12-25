@@ -91,6 +91,7 @@ class PatternKeepingList(Generic[T]):
         self.did_calculate = threading.Event()
         self.did_calculate.clear()
         self.pattern_done = threading.Event()
+        self.next_add_idx = -1
 
     def add(self, element):
         """
@@ -102,16 +103,22 @@ class PatternKeepingList(Generic[T]):
             if self.pattern_done.is_set():
                 return
             self.data.append(element)
+            if self.next_add_idx != -1:
+                if self.next_add_idx < len(self.pattern):
+                    if self.pattern[self.next_add_idx] == element:
+                        self.next_add_idx += 1
+                        return
+                else:
+                    self.next_add_idx = 0
+                    return self.add(element)
             if self.data[0:len(self.pattern)] != self.pattern:
-                self.pattern = None
-                self.did_calculate.clear()
+                self._reset_pattern()
             elif len(self.data) > len(self.pattern):
                 for i in range(len(self.pattern), len(self.data), len(self.pattern)):
                     next_data = self.data[i:min(i + len(self.pattern), len(self.data))]
                     if not all([next_data[i] == self.pattern[i] for i in range(len(next_data))]):
                         LoggerFacade.debug(f"Pattern reset: {next_data} and {self.pattern}")
-                        self.pattern = None
-                        self.did_calculate.clear()
+                        self._reset_pattern()
                         return
             elif len(self.data) == self.max_length:
                 self.data.clear()
@@ -119,15 +126,15 @@ class PatternKeepingList(Generic[T]):
         else:
             self.data.append(element)
 
+    def _reset_pattern(self):
+        self.pattern = None
+        self.did_calculate.clear()
+
     def detect_pattern_of_len(self, patt):
         return len([i for i in range(len(self.data)) if self.data[i: i + len(patt)] == patt])
 
     def find_pattern(self):
         self.pattern = self.break_pattern(self.data)
-
-    def get_pattern_str(self):
-        self.find_pattern()
-        return [str(i) for i in self.get_pattern()]
 
     def break_pattern(self, to_break_pattern):
         length = len(to_break_pattern)
