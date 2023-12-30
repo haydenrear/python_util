@@ -7,6 +7,9 @@ from python_util.logger.logger import LoggerFacade
 
 
 def get_dir(file, directory_name):
+    if file is None or file == '/':
+        return None
+
     if os.path.isfile(file):
         file = os.path.dirname(file)
 

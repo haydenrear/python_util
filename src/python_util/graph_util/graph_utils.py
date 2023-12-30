@@ -179,6 +179,7 @@ def current_edges(edgelist, node):
 
 
 def add_connections(edgelist, min_edges,
+                    make_symmetric: bool = False,
                     starting_adj_proba: Optional[torch.Tensor] = None):
     """
     Adds connections to a PyTorch edgelist until each node has at least min_edges edges.
@@ -189,13 +190,14 @@ def add_connections(edgelist, min_edges,
       device: (torch.device) Device where the tensors are stored (e.g., cpu, cuda).
 
     Returns:
+      :param make_symmetric:
       :param min_edges:
       :param edgelist: (torch.LongTensor) The updated edgelist with added connections.
       :param starting_adj_proba: If provided, this is an adjacency matrix with each item representing the likelihood
       of adding an edge there if there aren't enough to meet the min_edges requirement.
     """
     adjacency_matrix = transform_to_adjacency_matrix(edgelist)
-    to_add_adj = add_edges_vectorized_unique(adjacency_matrix, min_edges, starting_adj_proba)
+    to_add_adj = add_edges_vectorized_unique(adjacency_matrix, min_edges, make_symmetric, starting_adj_proba)
     to_add_edges = transform_from_adjacency_matrix(to_add_adj)
     edgelist = torch.cat((edgelist, torch.tensor(to_add_edges).T))
     return edgelist
