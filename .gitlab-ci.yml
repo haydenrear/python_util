@@ -2,8 +2,6 @@ include:
   - project: 'dev-ops/runner-code'
     file: '.gitlab-build-python-ci.yml'
 
-
-
 stages:
   - build
   - deploy
