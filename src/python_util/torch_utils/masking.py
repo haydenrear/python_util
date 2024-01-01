@@ -128,7 +128,10 @@ def apply_mask_as_value(to_mask: Optional[torch.Tensor],
     if mask is None:
         return get_true_mask_from_input(to_mask)
     else:
-        return to_mask.masked_fill(mask.unsqueeze(2).expand(to_mask.shape) == filter_value, to_set_value)
+        b = mask
+        while len(b.shape) < len(to_mask.shape):
+            b = b.unsqueeze(len(b.shape))
+        return to_mask.masked_fill_(~b.expand(to_mask.shape), to_set_value)
 
 
 def get_true_mask_from_input(input_tensor: torch.Tensor):
@@ -219,20 +222,22 @@ def make_causal_mask(attn_mask: Optional[torch.Tensor]):
     return attn_mask
 
 
-def create_key_padding_mask_from_attn_mask(attn_mask, batch_size: int):
-    if attn_mask is None:
+def create_key_padding_mask_from_attn_mask(tgt_mask, batch_size: int):
+    if tgt_mask is None:
         return None
-    updated_attn_mask = attn_mask
-    if len(attn_mask.shape) == 2:
-        if attn_mask.shape[0] == attn_mask.shape[1]:
-            updated_attn_mask = attn_mask.unsqueeze(0).expand(batch_size, -1)
-        elif attn_mask.shape[0] == batch_size:
-            return attn_mask
-    elif len(attn_mask.shape) == 3:
-        logging.debug(f'{attn_mask.shape} is size of output key padding mask from {attn_mask.shape}')
-        assert attn_mask.shape[0] % batch_size == 0, ("3d attention mask first dimension must be divisible by n heads "
+
+    updated_attn_mask = tgt_mask
+
+    if len(tgt_mask.shape) == 2:
+        if tgt_mask.shape[0] == tgt_mask.shape[1]:
+            updated_attn_mask = tgt_mask.unsqueeze(0).expand(batch_size, -1)
+        elif tgt_mask.shape[0] == batch_size:
+            return tgt_mask
+    elif len(tgt_mask.shape) == 3:
+        logging.debug(f'{tgt_mask.shape} is size of output key padding mask from {tgt_mask.shape}')
+        assert tgt_mask.shape[0] % batch_size == 0, ("3d attention mask first dimension must be divisible by n heads "
                                                       "size, as it is batch size // n heads.")
-        updated_attn_mask = attn_mask[:attn_mask.shape[0] // batch_size, 0, :]
+        updated_attn_mask = tgt_mask[:tgt_mask.shape[0] // batch_size, 0, :]
     assert len(updated_attn_mask.shape) == 2, (f"Output key padding mask was {updated_attn_mask.shape} "
                                                f"from {updated_attn_mask.shape}")
     return updated_attn_mask

@@ -230,3 +230,9 @@ def do_nan(in_tensor: torch.Tensor, value: float = 0.0) -> torch.Tensor:
     else:
         in_tensor = torch.nan_to_num(in_tensor, value)
     return in_tensor
+
+
+def detach_tensor_state(input_state):
+    input_state.prev_decoder_state \
+        = input_state.data.clone().detach().requires_grad_(False)
+    return input_state
