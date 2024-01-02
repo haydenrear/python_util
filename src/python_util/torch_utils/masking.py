@@ -131,7 +131,7 @@ def apply_mask_as_value(to_mask: Optional[torch.Tensor],
         b = mask
         while len(b.shape) < len(to_mask.shape):
             b = b.unsqueeze(len(b.shape))
-        return to_mask.masked_fill_(~b.expand(to_mask.shape), to_set_value)
+        return to_mask.masked_fill_(~b.expand(to_mask.shape).to(dtype=torch.bool), to_set_value)
 
 
 def get_true_mask_from_input(input_tensor: torch.Tensor):
