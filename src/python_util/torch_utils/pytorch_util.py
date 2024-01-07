@@ -12,6 +12,11 @@ def assert_same(t_1, t_2):
     assert torch.allclose(t_1, t_2)
 
 
+def create_torch_size_log(in_torch: Optional[torch.Tensor]):
+    return f"Shape: [{', '.join([str(i) for i in (in_torch if isinstance(in_torch, torch.Size) else in_torch.shape)])}]" \
+        if in_torch is not None else None
+
+
 def is_same_shape(t_1, t_2):
     t_1 = get_torch_shape(t_1)
     t_2 = get_torch_shape(t_2)
