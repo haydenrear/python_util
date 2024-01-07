@@ -38,7 +38,7 @@ def is_subclass_of(class_name: str, to_test: type, module: str):
 
 def get_fn_param_types(fn) -> dict:
     return {v.name: (v.annotation, v.default) for k, v in inspect.signature(fn).parameters.items()
-            if str(v.annotation) != "<class 'inspect._empty'>"}
+            if not is_empty_inspect(v.annotation)}
 
 
 def get_all_fn_param_types(fn) -> dict:
@@ -88,6 +88,17 @@ def get_return_type(fn) -> typing.Type:
     return inspect.signature(fn).return_annotation
 
 
+def empty_inspect_ex():
+    pass
+
+
+p = inspect.signature(empty_inspect_ex)
+
+
 def is_empty_inspect(val) -> bool:
-    p = inspect.signature(is_empty_inspect)
     return val == p.empty
+
+
+def is_optional_ty(ty_value) -> bool:
+    return 'Optional' == ty_value._name
+
