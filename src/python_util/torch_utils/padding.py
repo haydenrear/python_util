@@ -76,7 +76,7 @@ def pad_collapse_states_3d(size_sequence_state: int, to_pad: torch.Tensor, aggre
     return to_pad
 
 
-def pad_add_end_to_match(to_match_shape: list[int], to_pad):
+def pad_add_end_to_match(to_match_shape: list[int], to_pad, value = 0.0):
     if all([to_pad.shape[i] == pad for i, pad in enumerate(to_match_shape)]):
         return to_pad
     padding = []
@@ -85,4 +85,4 @@ def pad_add_end_to_match(to_match_shape: list[int], to_pad):
         padding.append(next_padding)
         padding.append(0)
 
-    return torch.nn.functional.pad(to_pad, tuple(list(reversed(padding))))
+    return torch.nn.functional.pad(to_pad, tuple(list(reversed(padding))), value=value)
