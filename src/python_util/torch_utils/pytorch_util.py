@@ -8,13 +8,39 @@ from python_util.logger.log_level import LogLevel
 from python_util.logger.logger import LoggerFacade
 
 
+def reshape_frontload(outputs):
+    if len(outputs.shape) == 1:
+        return outputs
+    if len(outputs.shape) == 2:
+        return outputs.reshape(outputs.shape[0] * outputs.shape[1])
+    start = 1
+    for o in outputs.shape[:-1]:
+        start *= o
+    reshape_output = [start, outputs.shape[-1]]
+    return outputs.reshape(reshape_output)
+
+
 def assert_same(t_1, t_2):
     assert torch.allclose(t_1, t_2)
 
 
 def create_torch_size_log(in_torch: Optional[torch.Tensor]):
-    return f"Shape: [{', '.join([str(i) for i in (in_torch if isinstance(in_torch, torch.Size) else in_torch.shape)])}]" \
-        if in_torch is not None else None
+    try:
+        return (
+            f"Shape: [{', '.join([str(i) for i in (in_torch if isinstance(in_torch, torch.Size) else in_torch.shape)])}], "
+            f"dtype: {in_torch.data.dtype}.") \
+            if in_torch is not None else None
+    except Exception as e:
+        return f"Could not return shape for {in_torch} with exception {e}."
+
+
+def create_torch_grad_log(in_torch: Optional[torch.Tensor]):
+    try:
+        return (f"Grad: [{in_torch.grad}], "
+                f"Grad fn: {in_torch.grad_fn}.") \
+            if in_torch is not None else None
+    except Exception as e:
+        return f"Could not return shape for {in_torch} with exception {e}."
 
 
 def is_same_shape(t_1, t_2):
@@ -229,10 +255,12 @@ def copy_tensor_to(copy_to: torch.Tensor, copy_from: torch.Tensor):
     copy_to.requires_grad_(copy_from.requires_grad)
 
 
-def do_nan(in_tensor: torch.Tensor, value: float = 0.0) -> torch.Tensor:
-    if LogLevel.is_debug_enabled():
-        assert not does_tensor_have_nan(in_tensor)
+def do_nan(in_tensor: torch.Tensor, value: float = 0.0, do_if: bool = False) -> torch.Tensor:
+    if LogLevel.is_debug_enabled() and not do_if:
+        assert not does_tensor_have_nan(in_tensor), f"{in_tensor} had NAN."
     else:
+        if do_if and LogLevel.is_debug_enabled():
+            LoggerFacade.debug(f"Updating {in_tensor} to fix NAN.")
         in_tensor = torch.nan_to_num(in_tensor, value)
     return in_tensor
 
