@@ -239,7 +239,7 @@ def create_key_padding_mask_from_attn_mask(tgt_mask, batch_size: int):
     elif len(tgt_mask.shape) == 3:
         logging.debug(f'{tgt_mask.shape} is size of output key padding mask from {tgt_mask.shape}')
         assert tgt_mask.shape[0] % batch_size == 0, ("3d attention mask first dimension must be divisible by n heads "
-                                                      "size, as it is batch size // n heads.")
+                                                     "size, as it is batch size // n heads.")
         updated_attn_mask = tgt_mask[:tgt_mask.shape[0] // batch_size, 0, :]
     assert len(updated_attn_mask.shape) == 2, (f"Output key padding mask was {updated_attn_mask.shape} "
                                                f"from {updated_attn_mask.shape}")
@@ -263,10 +263,25 @@ def make_causal_attn_mask_2d(attn_mask: Optional[torch.Tensor],
     return attn_mask.to(dtype=torch.float)
 
 
+def create_random_3d_mask(batch_size, seq_len):
+    out = torch.rand([batch_size, seq_len, seq_len])
+    out[out > 0.2] = 1.0
+    out[out < 0.2] = 0.0
+    return out
+
+
+def create_random_2d_mask(batch_size, seq_len):
+    out = torch.rand([batch_size, seq_len])
+    out[out > 0.2] = 1.0
+    out[out < 0.2] = 0.0
+    return out
+
+
 def make_causal_attn_mask_3d(attn_mask):
     if attn_mask is not None:
         if len(attn_mask.shape) == 3:
-            return torch.ones([i for i in attn_mask.shape], dtype=torch.bool).tril(diagonal=0).to(dtype=torch.float)
+            return torch.ones([i for i in attn_mask.shape], dtype=torch.bool).tril(diagonal=0).to(
+                dtype=torch.float) * attn_mask
 
         elif len(attn_mask.shape) == 2:
             b = attn_mask.shape[0]
