@@ -26,6 +26,11 @@ def recursive_dir_iter(directory_name):
             yield os.path.join(subdir, file)
 
 
+def delete_recursive(directory_name):
+    for d in recursive_dir_iter(directory_name):
+        os.remove(d)
+
+
 def get_data_dir(file):
     return os.path.join(get_dir(file, 'work'), 'data')
 
