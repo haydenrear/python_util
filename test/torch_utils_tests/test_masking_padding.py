@@ -49,7 +49,9 @@ class TestMaskingPadding(TestCase):
 
     def test_make_causal_mask_2d(self):
         out = make_causal_attn_mask_2d(torch.ones((20, 20)))
-        assert torch.allclose(out, torch.triu(torch.zeros((20, 20))))
+        assert torch.allclose(out, torch.ones((20, 20, 20)).tril())
+        out = make_causal_attn_mask_2d(torch.ones((10, 20)))
+        assert torch.allclose(out, torch.ones((10, 20, 20)).tril())
 
     def test_merge_masks(self):
         attn = torch.nn.MultiheadAttention(768, 4)

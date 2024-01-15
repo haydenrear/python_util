@@ -1,4 +1,5 @@
 import logging
+import typing
 from typing import Optional
 
 import torch
@@ -212,11 +213,13 @@ def create_target_mask(tgt):
     return tgt_mask
 
 
-def make_causal_mask(attn_mask: Optional[torch.Tensor]):
-    if attn_mask is None:
+def make_causal_mask(attn_mask: Optional[torch.Tensor],
+                     batch_size: typing.Optional[int] = None,
+                     seq_len: typing.Optional[int] = None):
+    if attn_mask is None and (batch_size is None or seq_len is None):
         return None
     if len(attn_mask.shape) == 2:
-        attn_mask = make_causal_attn_mask_2d(attn_mask)
+        attn_mask = make_causal_attn_mask_2d(attn_mask, batch_size, seq_len)
     elif len(attn_mask.shape) == 3:
         attn_mask = make_causal_attn_mask_3d(attn_mask)
     return attn_mask
@@ -244,22 +247,18 @@ def create_key_padding_mask_from_attn_mask(tgt_mask, batch_size: int):
 
 
 def make_causal_attn_mask_2d(attn_mask: Optional[torch.Tensor],
-                             seq_length: Optional[int] = None):
+                             batch_size: Optional[int] = None,
+                             seq_len: Optional[int] = None):
     if attn_mask is not None:
-        one = attn_mask.size(0)
-        two = attn_mask.size(1)
+        batch_size = attn_mask.size(0)
+        seq_len = attn_mask.size(1)
     else:
-        one = seq_length
-        two = seq_length
+        attn_mask = torch.ones([batch_size, seq_len])
 
     # Create a 2D causal mask of size (seq_len, seq_len)
-    causal_mask_2d = torch.ones(one, two, dtype=torch.float).tril(diagonal=0)
+    causal_mask_2d = torch.ones((seq_len, seq_len), dtype=torch.float).tril()
 
-    # Apply the causal mask to attn_mask
-    if attn_mask is not None:
-        attn_mask = attn_mask.to(torch.bool) & causal_mask_2d.to(torch.bool)
-    else:
-        attn_mask = causal_mask_2d
+    attn_mask = attn_mask.unsqueeze(1).expand([batch_size, seq_len, seq_len]) * causal_mask_2d
 
     return attn_mask.to(dtype=torch.float)
 

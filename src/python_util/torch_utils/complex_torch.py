@@ -29,3 +29,34 @@ def to_complex_from_2d(to_project_to_complex: torch.Tensor):
     shape_curr.extend([to_project_to_complex.shape[-1] // 2, 2])
     to_project_to_complex = to_project_to_complex.reshape(shape_curr)
     return torch.view_as_complex(to_project_to_complex)
+
+
+import numpy as np
+
+
+def init_complex_weights(shape, n_frequencies):
+    """
+    Initializes complex weights with real part in uniform distribution and
+    imaginary part in normal distribution with n frequencies.
+
+    Args:
+      shape: Desired shape of the complex weight tensor.
+      n_frequencies: Number of frequencies for the imaginary part.
+
+    Returns:
+      A complex-valued NumPy array with the specified initialization.
+    """
+
+    # Initialize real part with uniform distribution
+    real_part = np.random.uniform(low=-1.0, high=1.0, size=shape)
+
+    # Initialize imaginary part with normal distribution around n frequencies
+    freq_bands = np.linspace(1, 1 / np.sqrt(shape[-1]), n_frequencies)
+    imag_part = np.zeros(shape)
+    for i in range(n_frequencies):
+        imag_part += freq_bands[i] * np.random.randn(*shape)
+
+    # Combine real and imaginary parts into a complex-valued array
+    complex_weights = real_part + 1j * imag_part
+
+    return complex_weights

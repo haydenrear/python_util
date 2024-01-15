@@ -4,6 +4,7 @@ from typing import Optional
 import torch.nn
 import numpy
 
+from drools_py.mask.attn_mask_delegate import AttnMaskDelegate
 from python_util.logger.log_level import LogLevel
 from python_util.logger.logger import LoggerFacade
 
@@ -22,6 +23,16 @@ def reshape_frontload(outputs):
 
 def assert_same(t_1, t_2):
     assert torch.allclose(t_1, t_2)
+
+
+def log_attn_mask(in_torch: AttnMaskDelegate):
+    if in_torch is not None:
+        return ', '.join([f'{create_torch_size_log(in_torch.src_mask)}',
+                          f'{create_torch_size_log(in_torch.tgt_mask)}',
+                          f'{create_torch_size_log(in_torch.merged_mask)}',
+                          f'{create_torch_size_log(in_torch.causal_mask)}',])
+    else:
+        return 'Empty attention mask.'
 
 
 def create_torch_size_log(in_torch: Optional[torch.Tensor]):
