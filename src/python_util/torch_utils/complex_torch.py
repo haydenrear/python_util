@@ -1,11 +1,49 @@
 import torch
 
+import numpy as np
+
+
+def complex_boltzmann_prob(input_tensor, dim, temperature=1.0):
+    """
+    Calculate attention scores inspired by quantum mechanics and Boltzmann distribution.
+
+    Args:
+        input_tensor (torch.Tensor): Complex-valued input tensor.
+        dim (int): Dimension along which the probability scores will be calculated.
+        temperature (float, optional): Temperature parameter for the Boltzmann distribution.
+
+    Returns:
+        torch.Tensor: Probability scores inspired by quantum mechanics and Boltzmann distribution.
+    """
+    # Calculate the square of the magnitude of the product of the input tensor and its complex conjugate
+    magnitude_squared = torch.abs(input_tensor * input_tensor.conj()) ** 2
+
+    # Exponential term with temperature
+    exp_term = torch.exp(magnitude_squared / temperature)
+
+    # Sum along the specified dimension
+    prob_scores = exp_term / torch.sum(exp_term, dim=dim, keepdim=True)
+
+    return prob_scores.type(torch.complex64)
+
+
+def complex_attn_mask(out_mask):
+    out_shape = [i for i in out_mask.shape]
+    out_shape.append(2)
+    expanded_tensor = out_mask.unsqueeze(len(out_shape) - 1).expand(out_shape)
+    out_mask = torch.view_as_complex(expanded_tensor.contiguous())
+    return out_mask
+
 
 def ifft_to_real(ifft_taken_already: torch.Tensor):
     magnitude = torch.abs(ifft_taken_already)  # Magnitude of the complex numbers
     phase = torch.angle(ifft_taken_already)  # Phase angle of the complex numbers
     out = (magnitude + 1e-12) * torch.cos(phase)
     return out
+
+
+def complex_to_2d_2d(complex_numbered: torch.Tensor):
+    return torch.view_as_real(complex_numbered)
 
 
 def complex_to_2d(complex_numbered: torch.Tensor):
@@ -29,9 +67,6 @@ def to_complex_from_2d(to_project_to_complex: torch.Tensor):
     shape_curr.extend([to_project_to_complex.shape[-1] // 2, 2])
     to_project_to_complex = to_project_to_complex.reshape(shape_curr)
     return torch.view_as_complex(to_project_to_complex)
-
-
-import numpy as np
 
 
 def init_complex_weights(shape, n_frequencies):

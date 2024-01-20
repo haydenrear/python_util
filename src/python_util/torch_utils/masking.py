@@ -279,24 +279,9 @@ def create_random_2d_mask(batch_size, seq_len):
 
 def make_causal_attn_mask_3d(attn_mask):
     if attn_mask is not None:
-        if len(attn_mask.shape) == 3:
-            return torch.ones([i for i in attn_mask.shape], dtype=torch.bool).tril(diagonal=0).to(
-                dtype=torch.float) * attn_mask
+        assert len(attn_mask.shape) == 3
+        return (torch.ones([i for i in attn_mask.shape], dtype=torch.bool).tril() * attn_mask.type(dtype=torch.bool)).type(torch.float)
 
-        elif len(attn_mask.shape) == 2:
-            b = attn_mask.shape[0]
-            seq_len = attn_mask.shape[1]
-
-            # Create a 2D causal mask of size (seq_len, seq_len)
-            causal_mask_2d = torch.ones(seq_len, seq_len, dtype=torch.bool).tril(diagonal=0)
-
-            # Expand the 2D mask to match the dimensions of attn_mask
-            causal_mask = causal_mask_2d.unsqueeze(0).expand(b, -1, -1)
-
-            # Apply the causal mask to attn_mask
-            attn_mask = attn_mask.to(dtype=torch.bool) & causal_mask.to(dtype=torch.bool)
-
-            return attn_mask.to(dtype=torch.float)
 
 
 def create_attn_mask(n_sequence_state, batch_size, n_heads, decoder_states,
