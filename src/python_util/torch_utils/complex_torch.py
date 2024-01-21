@@ -2,6 +2,9 @@ import torch
 
 import numpy as np
 
+from python_util.logger.logger import LoggerFacade
+from python_util.torch_utils.pytorch_util import copy_tensor_to
+
 
 def complex_boltzmann_prob(input_tensor, dim, temperature=1.0):
     """
@@ -69,7 +72,7 @@ def to_complex_from_2d(to_project_to_complex: torch.Tensor):
     return torch.view_as_complex(to_project_to_complex)
 
 
-def init_complex_weights(shape, n_frequencies):
+def init_complex_weights(in_value, n_frequencies):
     """
     Initializes complex weights with real part in uniform distribution and
     imaginary part in normal distribution with n frequencies.
@@ -81,6 +84,18 @@ def init_complex_weights(shape, n_frequencies):
     Returns:
       A complex-valued NumPy array with the specified initialization.
     """
+    if isinstance(in_value, torch.Size):
+        shape = in_value
+    elif isinstance(in_value, torch.Tensor):
+        shape = in_value.shape
+    else:
+        LoggerFacade.warn(f"Found in value of type {type(in_value)} when initializing complex weights.")
+        if hasattr(in_value, 'shape'):
+            shape = in_value.shape
+        else:
+            shape = in_value
+
+    LoggerFacade.info(f"Initializing complex weights with shape {shape} and num frequency bands {n_frequencies}.")
 
     # Initialize real part with uniform distribution
     real_part = np.random.uniform(low=-1.0, high=1.0, size=shape)
@@ -94,4 +109,10 @@ def init_complex_weights(shape, n_frequencies):
     # Combine real and imaginary parts into a complex-valued array
     complex_weights = real_part + 1j * imag_part
 
+    if not isinstance(in_value, torch.Size) and isinstance(in_value, torch.Tensor):
+        copy_tensor_to(torch.tensor(complex_weights), in_value)
+        return in_value
+
     return complex_weights
+
+

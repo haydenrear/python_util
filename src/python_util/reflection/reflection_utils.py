@@ -100,5 +100,5 @@ def is_empty_inspect(val) -> bool:
 
 
 def is_optional_ty(ty_value) -> bool:
-    return 'Optional' == ty_value._name
+    return hasattr(ty_value, '_name') and 'Optional' == ty_value._name
 
