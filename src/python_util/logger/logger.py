@@ -55,7 +55,7 @@ class LoggerFacade:
 
     @staticmethod
     def error(output):
-        if LogLevel.is_write_enabled():
+        if LogLevel.is_error_write_enabled():
             with open('/Users/hayde/IdeaProjects/drools/feature-extractor/multi_modal/test_work/error.log',
                       'a') as file:
                 file.write(output)
