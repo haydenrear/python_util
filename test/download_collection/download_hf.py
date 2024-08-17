@@ -17,8 +17,8 @@ def iterate_files_in_directories(directory) -> iter:
 class DownloadHfCollection(unittest.TestCase):
     def test_do_download(self):
         # Replace 'your_organization_name' with the name of your Hugging Face organization
-        organization_name = 'openbmb'
-        to_save_volume = '/Volumes/19'
+        organization_name = 'yuchen0187'
+        to_save_volume = '/Volumes/16'
 
         # Define a directory to save the downloaded models
 
@@ -37,7 +37,7 @@ class DownloadHfCollection(unittest.TestCase):
                 print(f'Downloading {str(model_id)}.')
                 replace = str(model_id).replace(f'{organization_name}/', '')
                 try:
-                    if not model_id.startswith(f'{organization_name}/') :
+                    if not model_id.startswith(f'{organization_name}/') or not 'Point-SAM' in model_id:
                         print("Skipping ", model_id)
                         continue
                     model_name = f'models--{organization_name}--{replace}'
