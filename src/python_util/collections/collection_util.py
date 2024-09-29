@@ -72,6 +72,13 @@ def first(input: dict):
     if key:
         return input[key]
 
+def first_matching(input: dict, f: typing.Callable[[...], bool]):
+    key = first_key(input)
+    if key:
+        v = input[key]
+        if f(v):
+            return v
+
 
 T = TypeVar("T")
 
