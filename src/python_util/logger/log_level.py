@@ -2,10 +2,9 @@ import logging
 
 
 class LogLevel:
-    level = None
+    level = logging.INFO
     do_write = False
     do_write_error = False
-
 
     @classmethod
     def is_debug_enabled(cls):
