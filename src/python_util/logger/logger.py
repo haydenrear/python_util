@@ -1,10 +1,9 @@
 import logging
-import os
-from injector import synchronized
 import threading
 import typing
 
-from build.lib.python_util.reflection.reflection_utils import class_name_str
+from injector import synchronized
+
 from python_util.logger.fluentd_logger import FluentDLogger, FluentDLoggerProperties, FluentDEvent
 from python_util.logger.log_level import LogLevel
 
@@ -40,7 +39,7 @@ class LoggerFacade:
     @staticmethod
     def log_to_fluent_d(message: str, ctx_values: typing.Optional[dict[str, str]] = None,
                         label: str = "python", log_level: int = logging.INFO):
-        if LoggerFacade.FLUENT_D_LOGGER is not None:
+        if hasattr(LoggerFacade, 'FLUENT_D_LOGGER'):
             LoggerFacade.FLUENT_D_LOGGER.log_fluent_d(FluentDEvent(ctx_values, log_level, message, label))
 
     @staticmethod
