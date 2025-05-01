@@ -4,6 +4,8 @@ import logging
 import typing
 from typing import Any
 
+from python_util.logger.logger import LoggerFacade
+
 
 def class_name_str(value: Any):
     return f'{str(value.__class__.__name__)}'
@@ -22,6 +24,7 @@ def get_class_obj_from_module(class_name, module):
         class_obj = getattr(module, class_name)
         return class_obj
     except Exception as e:
+        LoggerFacade.error(f"Error! {e}")
         return None
 
 
