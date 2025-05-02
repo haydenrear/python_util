@@ -96,6 +96,14 @@ class LoggerFacade:
                     file.write('\n')
                 except Exception as e:
                     print(f"Could not write in log: {e}")
+    @staticmethod
+    def raise_exc(output, exc_ty: typing.Union[typing.Type[Exception], Exception]):
+        LoggerFacade.error(output)
+        if isinstance(exc_ty, Exception):
+            raise exc_ty
+
+        raise exc_ty(output)
+
 
     @staticmethod
     def error(output,
