@@ -19,12 +19,34 @@ def get_dir(file, directory_name):
 
     return get_dir(os.path.dirname(file), directory_name)
 
+def find_file(file, name: str):
+    if file is None or file == '/':
+        return None
+
+    if os.path.isfile(file):
+        if os.path.basename(file) == name:
+            return file
+        file = os.path.dirname(file)
+
+    try:
+        for directory in os.listdir(file):
+            if not os.path.isfile(directory) and not os.path.isdir(directory):
+                directory = os.path.join(file, directory)
+            if os.path.isfile(directory) and os.path.basename(directory) == name:
+                return directory
+            elif os.path.isdir(directory):
+                for f in os.listdir(directory):
+                    if os.path.basename(f) == name:
+                        return f
+    except:
+        return None
+
+    return find_file(os.path.dirname(file), name)
 
 def recursive_dir_iter(directory_name):
     for subdir, dirs, files in os.walk(directory_name):
         for file in files:
             yield os.path.join(subdir, file)
-
 
 def delete_recursive(directory_name):
     for d in recursive_dir_iter(directory_name):

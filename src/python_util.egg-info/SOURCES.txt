@@ -9,6 +9,7 @@ src/python_util/collections/collection_util.py
 src/python_util/collections/cyclic_registrations.py
 src/python_util/collections/last_n_historical_dict.py
 src/python_util/collections/pattern_keeping_list.py
+src/python_util/collections/topological_sort.py
 src/python_util/concurrent/__init__.py
 src/python_util/concurrent/synchronized_lock_stripe.py
 src/python_util/copy_clone_util/__init__.py
@@ -27,6 +28,8 @@ src/python_util/io_utils/io.py
 src/python_util/io_utils/read_util.py
 src/python_util/io_utils/unzip_util.py
 src/python_util/logger/__init__.py
+src/python_util/logger/fluentd_logger.py
+src/python_util/logger/inspect_utils.py
 src/python_util/logger/log_level.py
 src/python_util/logger/logger.py
 src/python_util/monads/__init__.py

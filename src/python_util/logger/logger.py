@@ -5,7 +5,7 @@ import typing
 from injector import synchronized
 
 from python_util.logger.fluentd_logger import FluentDLogger, FluentDLoggerProperties, FluentDEvent
-from python_util.logger.log_level import LogLevel
+from python_util.logger.log_level import LogLevel, LogLevelFacade
 
 lock = threading.RLock()
 
@@ -39,6 +39,8 @@ class LoggerFacade:
     @staticmethod
     def log_to_fluent_d(message: str, ctx_values: typing.Optional[dict[str, str]] = None,
                         label: str = "python", log_level: int = logging.INFO):
+        if LogLevel.level == LogLevelFacade.Ctx:
+            return
         if hasattr(LoggerFacade, 'FLUENT_D_LOGGER'):
             LoggerFacade.FLUENT_D_LOGGER.log_fluent_d(FluentDEvent(ctx_values, log_level, message, label))
 
@@ -46,6 +48,9 @@ class LoggerFacade:
     def debug(file_output, enable_debug: bool = False,
               ctx_values: typing.Optional[dict[str, str]] = None,
               label: str = "python"):
+        level = LogLevel.level
+        if level == LogLevelFacade.Ctx:
+            return
         if enable_debug:
             LogLevel.set_log_level(logging.DEBUG)
             assert LogLevel.is_debug_enabled()
@@ -65,6 +70,8 @@ class LoggerFacade:
     @staticmethod
     def debug_deferred(file_output: typing.Callable[[], str], enable_debug: bool = False,
                        ctx_values: typing.Optional[dict[str, str]] = None, label: str = "python"):
+        if LogLevel.level == LogLevelFacade.Ctx:
+            return
         if enable_debug:
             LogLevel.set_log_level(logging.DEBUG)
             assert LogLevel.is_debug_enabled()
@@ -82,9 +89,18 @@ class LoggerFacade:
             LoggerFacade.log_to_fluent_d(file_output(), ctx_values, label, logging.DEBUG)
 
     @staticmethod
+    def to_ctx(output,
+               ctx_values: typing.Optional[dict[str, str]] = None,
+               label: str = "python"):
+        print(f'Context value: {output}')
+
+    @staticmethod
     def info(output,
              ctx_values: typing.Optional[dict[str, str]] = None,
              label: str = "python"):
+        if LogLevel.level == LogLevelFacade.Ctx:
+            return
+
         print(f"Info: {output}")
         logging.info(output)
         LoggerFacade.log_to_fluent_d(output, ctx_values, label, logging.INFO)
@@ -98,6 +114,8 @@ class LoggerFacade:
                     print(f"Could not write in log: {e}")
     @staticmethod
     def raise_exc(output, exc_ty: typing.Union[typing.Type[Exception], Exception]):
+        if LogLevel.level == LogLevelFacade.Ctx:
+            return
         LoggerFacade.error(output)
         if isinstance(exc_ty, Exception):
             raise exc_ty
@@ -109,6 +127,8 @@ class LoggerFacade:
     def error(output,
               ctx_values: typing.Optional[dict[str, str]] = None,
               label: str = "python"):
+        if LogLevel.level == LogLevelFacade.Ctx:
+            return
         LoggerFacade.log_to_fluent_d(output, ctx_values, label, logging.ERROR)
         if LogLevel.is_error_write_enabled():
             with open('/Users/hayde/IdeaProjects/drools/feature-extractor/multi_modal/test_work/error.log',
@@ -122,6 +142,8 @@ class LoggerFacade:
     def warn(output,
              ctx_values: typing.Optional[dict[str, str]] = None,
              label: str = "python"):
+        if LogLevel.level == LogLevelFacade.Ctx:
+            return
         LoggerFacade.log_to_fluent_d(output, ctx_values, label, logging.WARN)
         print(f"Warning: {output}")
         logging.warning(output)

@@ -1,5 +1,8 @@
+import enum
 import logging
 
+class LogLevelFacade(enum.Enum):
+    Ctx = enum.auto()
 
 class LogLevel:
     level = logging.INFO

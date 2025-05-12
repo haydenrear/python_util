@@ -1,5 +1,5 @@
-Metadata-Version: 2.1
-Name: python-util
+Metadata-Version: 2.4
+Name: python_util
 Version: 1.0.0
 Summary: Python library
 Author: Hayden Rear
@@ -11,3 +11,7 @@ Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.6
 Classifier: Programming Language :: Python :: 3.7
 Classifier: Programming Language :: Python :: 3.8
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: summary
