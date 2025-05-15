@@ -1,4 +1,5 @@
 import logging
+import os.path
 import threading
 import typing
 
@@ -13,6 +14,7 @@ lock = threading.RLock()
 class LoggerFacade:
     ctx_values: typing.Optional[dict[str, str]]
     FLUENT_D_LOGGER: typing.Optional[FluentDLogger]
+    log_dir = os.environ.get('LOG_DIR') if 'LOG_DIR' in os.environ.keys() else None
 
     @classmethod
     @synchronized(lock)
@@ -50,6 +52,7 @@ class LoggerFacade:
               label: str = "python"):
         level = LogLevel.level
         if level == LogLevelFacade.Ctx:
+            LoggerFacade.write_to_log(file_output)
             return
         if enable_debug:
             LogLevel.set_log_level(logging.DEBUG)
@@ -71,6 +74,7 @@ class LoggerFacade:
     def debug_deferred(file_output: typing.Callable[[], str], enable_debug: bool = False,
                        ctx_values: typing.Optional[dict[str, str]] = None, label: str = "python"):
         if LogLevel.level == LogLevelFacade.Ctx:
+            LoggerFacade.write_to_log(file_output())
             return
         if enable_debug:
             LogLevel.set_log_level(logging.DEBUG)
@@ -99,6 +103,7 @@ class LoggerFacade:
              ctx_values: typing.Optional[dict[str, str]] = None,
              label: str = "python"):
         if LogLevel.level == LogLevelFacade.Ctx:
+            LoggerFacade.write_to_log(output)
             return
 
         print(f"Info: {output}")
@@ -115,6 +120,7 @@ class LoggerFacade:
     @staticmethod
     def raise_exc(output, exc_ty: typing.Union[typing.Type[Exception], Exception]):
         if LogLevel.level == LogLevelFacade.Ctx:
+            LoggerFacade.write_to_log(output)
             return
         LoggerFacade.error(output)
         if isinstance(exc_ty, Exception):
@@ -128,21 +134,34 @@ class LoggerFacade:
               ctx_values: typing.Optional[dict[str, str]] = None,
               label: str = "python"):
         if LogLevel.level == LogLevelFacade.Ctx:
+            LoggerFacade.write_to_log(output)
             return
         LoggerFacade.log_to_fluent_d(output, ctx_values, label, logging.ERROR)
         if LogLevel.is_error_write_enabled():
-            with open('/Users/hayde/IdeaProjects/drools/feature-extractor/multi_modal/test_work/error.log',
-                      'a') as file:
-                file.write(output)
-                file.write('\n')
+            LoggerFacade.write_to_log(output)
         print(f"Error: {output}")
         logging.error(output)
+
+    @classmethod
+    def write_to_log(cls, output, log = None):
+        if log is None:
+            if cls.log_dir is None:
+                cls.log_dir = '/tmp/log.log'
+            log = cls.log_dir
+
+        if not os.path.exists(log):
+            with open(log, 'w')  as file:
+                pass
+        with open(log, 'a') as file:
+            file.write(output)
+            file.write('\n')
 
     @staticmethod
     def warn(output,
              ctx_values: typing.Optional[dict[str, str]] = None,
              label: str = "python"):
         if LogLevel.level == LogLevelFacade.Ctx:
+            LoggerFacade.write_to_log(output)
             return
         LoggerFacade.log_to_fluent_d(output, ctx_values, label, logging.WARN)
         print(f"Warning: {output}")
