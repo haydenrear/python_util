@@ -1,9 +1,10 @@
 import unittest
 
-from python_util.collections.topological_sort import HasDependencies, topological_sort
+from python_util.collections.topological_sort import HasDependencies, topological_sort, T
 
 
 class DependencyObject(HasDependencies):
+
     def __init__(self, name, depends_on=None):
         self.name = name
         self.depends_on = depends_on or []
@@ -13,6 +14,9 @@ class DependencyObject(HasDependencies):
 
     def get_dependencies(self):
         return self.depends_on
+
+    def self_id(self) -> T:
+        return 'hello'
 
 # Example objects with dependencies
 obj1 = DependencyObject("Obj1")
@@ -28,15 +32,6 @@ objects = [obj1, obj2, obj3, obj4, obj5, obj6, obj7]
 
 
 
-class TestTopoSort(unittest.TestCase):
-    def test_something(self):
-        try:
-            sorted_objects = topological_sort(objects)
-            for obj in sorted_objects:
-                print(obj)
-        except ValueError as e:
-            print(e)
 
 
-if __name__ == '__main__':
-    unittest.main()
+

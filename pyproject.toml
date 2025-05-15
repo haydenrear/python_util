@@ -1,0 +1,32 @@
+[project]
+name = "python_util"
+version = "1.0.0"
+description = "Python library"
+authors = [
+    {name = "Hayden Rear", email = "hayden.rear@gmail.com"},
+]
+
+dependencies = [
+    "networkx==3.1",
+    "numpy==1.24.3",
+    "scipy==1.11.4",
+    "setuptools==68.0.0",
+    "torch==2.7.0",
+    "torch_geometric==2.6.1",
+    "python-dotenv==1.0.0",
+    "injector==0.22.0",
+    "scipy==1.11.4",
+]
+
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.setuptools]
+packages = ["python_util"]
+package-dir = {"" = "src"}
+
+[project.scripts]
+test-python-util = "python_util.test.run_python_util:main"

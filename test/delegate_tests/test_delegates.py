@@ -1,6 +1,6 @@
 import unittest
 
-from delegate_test.delegate_fixutres import Delegator, TestDelegate
+from delegate_tests.delegate_fixutres import Delegator, TestDelegate
 
 
 class DelegatesTest(unittest.TestCase):
@@ -18,5 +18,3 @@ class DelegatesTest(unittest.TestCase):
         assert isinstance(one, TestDelegate)
 
 
-if __name__ == '__main__':
-    unittest.main()

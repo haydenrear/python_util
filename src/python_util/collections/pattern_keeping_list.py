@@ -2,8 +2,6 @@ import copy
 import threading
 from typing import TypeVar, Generic, Optional
 
-from pygtrie import Trie
-
 from python_util.logger.logger import LoggerFacade
 
 T = TypeVar("T")

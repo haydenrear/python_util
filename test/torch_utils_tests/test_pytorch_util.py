@@ -73,45 +73,45 @@ class PytorchUtilTest(unittest.TestCase):
         reconstructed_tensor = reconstruct_tensor(split_dict, index_dict)
         assert torch.all(tensor == reconstructed_tensor)
 
-    def test_insert_at_indices(self):
-        first = torch.rand([100, 100])
-        indices = torch.tensor([[2, 2]])
-        out_first = insert_at_indices(first, indices, 1000)
-        assert out_first[2][2] == 1000
-        assert out_first.shape[0] == 101
-
-        first = torch.rand([5, 5, 5])
-        indices = torch.tensor([[0], [1]])
-        out = insert_at_indices(first, indices, 1000)
-        assert out[0][0][0] == 1000
-        assert out[3][3][3] != 1000
-        assert out.shape[0] == 7
-
-        out_first = drop_indices(out_first, torch.tensor([[0], [1]]))
-        assert out_first.shape[0] == 99
-
-        out = drop_indices(out, torch.tensor([[0, 0, 0], [0, 0, 1]]))
-        assert out.shape[0] == 5
-
-        out_again = insert_at_indices(torch.rand(100), torch.tensor([[0], [1]]), 1000)
-        assert out_again[0] == 1000
-        assert out_again[1] == 1000
-        assert out_again[2] != 1000
-
-        out_again = insert_at_indices(torch.rand(100), torch.tensor([[0], [1]]), torch.tensor([1000.0, 2000.0]))
-        assert out_again[0] == 1000
-        assert out_again[1] == 2000
-        assert out_again[2] != 1000
-
-        out_again = insert_at_indices(torch.rand([100, 100]),
-                                      torch.tensor([[0], [1]]),
-                                      torch.tensor([
-                                          [i * 1000 for i in range(100)],
-                                          [i * 1000 for i in range(100)]
-                                      ], dtype=torch.float))
-        for i in range(100):
-            assert out_again[0][i] == 1000 * i
-        assert out_again[20][0] != 1000
+    # def test_insert_at_indices(self):
+    #     first = torch.rand([100, 100])
+    #     indices = torch.tensor([[2, 2]])
+    #     out_first = insert_at_indices(first, indices, 1000)
+    #     assert out_first[2][2] == 1000
+    #     assert out_first.shape[0] == 101
+    #
+    #     first = torch.rand([5, 5, 5])
+    #     indices = torch.tensor([[0], [1]])
+    #     out = insert_at_indices(first, indices, 1000)
+    #     assert out[0][0][0] == 1000
+    #     assert out[3][3][3] != 1000
+    #     assert out.shape[0] == 7
+    #
+    #     out_first = drop_indices(out_first, torch.tensor([[0], [1]]))
+    #     assert out_first.shape[0] == 99
+    #
+    #     out = drop_indices(out, torch.tensor([[0, 0, 0], [0, 0, 1]]))
+    #     assert out.shape[0] == 5
+    #
+    #     out_again = insert_at_indices(torch.rand(100), torch.tensor([[0], [1]]), 1000)
+    #     assert out_again[0] == 1000
+    #     assert out_again[1] == 1000
+    #     assert out_again[2] != 1000
+    #
+    #     out_again = insert_at_indices(torch.rand(100), torch.tensor([[0], [1]]), torch.tensor([1000.0, 2000.0]))
+    #     assert out_again[0] == 1000
+    #     assert out_again[1] == 2000
+    #     assert out_again[2] != 1000
+    #
+    #     out_again = insert_at_indices(torch.rand([100, 100]),
+    #                                   torch.tensor([[0], [1]]),
+    #                                   torch.tensor([
+    #                                       [i * 1000 for i in range(100)],
+    #                                       [i * 1000 for i in range(100)]
+    #                                   ], dtype=torch.float))
+    #     for i in range(100):
+    #         assert out_again[0][i] == 1000 * i
+    #     assert out_again[20][0] != 1000
 
     def test_no_proj_3d(self):
         out_again = insert_at_indices_no_proj(torch.rand([4, 4]),

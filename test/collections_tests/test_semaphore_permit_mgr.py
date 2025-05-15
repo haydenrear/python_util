@@ -4,7 +4,7 @@ import unittest
 from python_util.collections.cyclic_registrations import CyclicRegistrations, UnderlyingSet, ListCyclicRegistrations
 
 
-class TestSemaphorePermitManager(unittest.TestCase):
+class TestSemaphorePermitManager(unittest.IsolatedAsyncioTestCase):
 
     def __init__(self, *args):
         super().__init__(*args)
