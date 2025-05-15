@@ -26,6 +26,7 @@ def find_file(file, name: str):
     if os.path.isfile(file):
         if os.path.basename(file) == name:
             return file
+
         file = os.path.dirname(file)
 
     try:
@@ -37,11 +38,12 @@ def find_file(file, name: str):
             elif os.path.isdir(directory):
                 for f in os.listdir(directory):
                     if os.path.basename(f) == name:
-                        return f
+                        return os.path.join(os.path.dirname(file), f)
     except:
         return None
 
-    return find_file(os.path.dirname(file), name)
+    dirname = os.path.dirname(file)
+    return find_file(dirname, name)
 
 def recursive_dir_iter(directory_name):
     for subdir, dirs, files in os.walk(directory_name):
