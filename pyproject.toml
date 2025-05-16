@@ -13,7 +13,7 @@ dependencies = [
     "setuptools==68.0.0",
     "torch==2.7.0",
     "torch_geometric==2.6.1",
-    "python-dotenv==1.0.0",
+    "python-dotenv==1.1.0",
     "injector==0.22.0",
     "scipy==1.11.4",
 ]
