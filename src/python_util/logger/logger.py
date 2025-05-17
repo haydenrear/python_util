@@ -13,8 +13,8 @@ lock = threading.RLock()
 
 class LoggerFacade:
     ctx_values: typing.Optional[dict[str, str]]
-    FLUENT_D_LOGGER: typing.Optional[FluentDLogger]
     log_dir = os.environ.get('LOG_DIR') if 'LOG_DIR' in os.environ.keys() else None
+    FLUENT_D_LOGGER: typing.Optional[FluentDLogger]
 
     @classmethod
     @synchronized(lock)
